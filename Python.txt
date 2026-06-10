@@ -1,0 +1,343 @@
+1)
+
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, LabelEncoder
+from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
+import warnings
+warnings.filterwarnings("ignore")
+
+# ── Step 1: Load dataset ──────────────────────────────────────
+from sklearn.datasets import load_iris
+iris = load_iris(as_frame=True)
+df = iris.frame.copy()
+df.columns = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'target']
+
+# Simulate missing values for demonstration
+np.random.seed(42)
+mask = np.random.choice([True, False], size=df.shape, p=[0.05, 0.95])
+df_missing = df.copy()
+df_missing[mask] = np.nan
+print('Dataset shape:', df_missing.shape)
+print('Missing values per column:')
+print(df_missing.isnull().sum())
+
+# ── Step 2: Handle Missing Values ──────────────────────────────
+num_cols = df_missing.select_dtypes(include=[np.number]).columns
+imputer = SimpleImputer(strategy='mean')
+df_missing[num_cols] = imputer.fit_transform(df_missing[num_cols])
+print('\nMissing values after imputation:', df_missing.isnull().sum().sum())
+
+# ── Step 3: Remove Duplicates ───────────────────────────────────
+df_clean = df_missing.drop_duplicates()
+print(f'Rows after deduplication: {len(df_clean)}')
+
+# ── Step 4: Min-Max Normalization ──────────────────────────────
+features = [c for c in num_cols if c != "target"]
+scaler_mm = MinMaxScaler()
+df_normalized = df_clean.copy()
+df_normalized[features] = scaler_mm.fit_transform(df_clean[features])
+print('\nNormalized features (first 3 rows):')
+print(df_normalized[features].head(3))
+
+# ── Step 5: Z-score Standardization ───────────────────────────
+scaler_std = StandardScaler()
+df_standardized = df_clean.copy()
+df_standardized[features] = scaler_std.fit_transform(df_clean[features])
+print('\nStandardized features mean (should be ~0):')
+print(df_standardized[features].mean().round(4))
+
+# ── Step 6: Label Encoding ─────────────────────────────────────
+le = LabelEncoder()
+df_clean["target_encoded"] = le.fit_transform(df_clean["target"])
+print('\nLabel encoding mapping:', dict(zip(le.classes_, le.transform(le.classes_))))
+
+# ── Step 7: PCA – Dimensionality Reduction ─────────────────────
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(df_standardized[features])
+print(f'\nPCA Explained Variance Ratio: {pca.explained_variance_ratio_.round(4)}')
+print(f'Total Variance Retained: {pca.explained_variance_ratio_.sum():.4f}')
+
+# ── Step 8: Summary Statistics Comparison ──────────────────────
+print('\nOriginal dataset statistics:')
+print(df[features].describe().round(2))
+print('\nStandardized dataset statistics:')
+print(df_standardized[features].describe().round(2))
+
+
+###################################################################################################################################
+
+
+2)
+
+import pandas as pd
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori, association_rules
+
+# ── Step 1: Create sample retail transaction dataset ────────────
+transactions = [
+    ['milk', 'bread', 'butter'],
+    ['bread', 'butter', 'eggs'],
+    ['milk', 'bread', 'eggs', 'cheese'],
+    ['milk', 'butter'],
+    ['bread', 'eggs'],
+    ['milk', 'bread', 'butter', 'cheese'],
+    ['bread', 'eggs', 'cheese'],
+    ['milk', 'eggs'],
+    ['butter', 'cheese'],
+    ['milk', 'bread', 'eggs', 'butter'],
+    ['bread', 'butter', 'cheese'],
+    ['milk', 'eggs', 'cheese'],
+    ['milk', 'bread'],
+    ['eggs', 'butter', 'cheese'],
+    ['milk', 'bread', 'butter', 'eggs', 'cheese'],
+]
+
+# ── Step 2: Encode transactions into binary matrix ─────────────
+te = TransactionEncoder()
+te_array = te.fit_transform(transactions)
+df = pd.DataFrame(te_array, columns=te.columns_)
+print('Transaction binary matrix shape:', df.shape)
+print('Items:', list(te.columns_))
+
+# ── Step 3: Apply Apriori to find frequent itemsets ────────────
+frequent_itemsets = apriori(df, min_support=0.3, use_colnames=True)
+frequent_itemsets['length'] = frequent_itemsets['itemsets'].apply(len)
+print(f'\nTotal frequent itemsets found: {len(frequent_itemsets)}')
+print('\nTop 10 frequent itemsets by support:')
+print(frequent_itemsets.sort_values('support', ascending=False).head(10))
+
+# ── Step 4: Generate association rules ──────────────────────────
+rules = association_rules(frequent_itemsets, metric='confidence', min_threshold=0.5)
+rules = rules.sort_values('lift', ascending=False)
+print(f'\nTotal rules generated: {len(rules)}')
+
+# ── Step 5: Display top rules ───────────────────────────────────
+print('\nTop 10 Association Rules (sorted by lift):')
+print('-' * 65)
+print(f"{'Antecedent':<20} {'Consequent':<15} {'Supp':>6} {'Conf':>6} {'Lift':>6}")
+print('-' * 65)
+for _, row in rules.head(10).iterrows():
+    ant = ", ".join(list(row["antecedents"]))
+    con = ", ".join(list(row["consequents"]))
+    print(f'{ant:<20} {con:<15} {row["support"]:>6.3f} {row["confidence"]:>6.3f} {row["lift"]:>6.3f}')
+
+# ── Step 6: Filter strong rules (lift > 1.2) ────────────────────
+strong_rules = rules[rules['lift'] > 1.2]
+print(f'\nStrong rules (lift > 1.2): {len(strong_rules)}')
+
+
+####################################################################################################################################
+
+
+3)
+
+import pandas as pd
+import numpy as np
+import time
+from itertools import combinations
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori
+
+# ── Step 1: Generate larger transaction dataset ─────────────────
+np.random.seed(0)
+items = ['milk','bread','butter','eggs','cheese','jam','juice','tea','coffee','sugar']
+transactions = []
+for _ in range(200):
+    n_items = np.random.randint(2, 6)
+    t = list(np.random.choice(items, n_items, replace=False))
+    transactions.append(t)
+
+# ── Step 2: Binary encoding ─────────────────────────────────────
+te = TransactionEncoder()
+te_arr = te.fit_transform(transactions)
+df = pd.DataFrame(te_arr, columns=te.columns_)
+
+# ── Step 3: Standard Apriori (baseline) ─────────────────────────
+start_std = time.time()
+fi_std = apriori(df, min_support=0.05, use_colnames=True)
+time_std = time.time() - start_std
+fi_std['length'] = fi_std['itemsets'].apply(len)
+
+# ── Step 4: Improved Apriori with subset pruning ────────────────
+def improved_apriori(df, min_support=0.05):
+    """Apriori with early pruning: only generate candidates whose
+    all (k-1) subsets are already in the frequent set."""
+    n = len(df)
+    items = frozenset(df.columns)
+    # Generate 1-itemsets
+    freq = {frozenset([i]): df[i].mean() for i in items
+            if df[i].mean() >= min_support}
+    all_freq = dict(freq)
+    k = 2
+    while freq:
+        candidates = set()
+        freq_list = list(freq.keys())
+        for i in range(len(freq_list)):
+            for j in range(i+1, len(freq_list)):
+                union = freq_list[i] | freq_list[j]
+                if len(union) == k:
+                    # Pruning: check all subsets of size k-1 are frequent
+                    subsets = [frozenset(c) for c in combinations(union, k-1)]
+                    if all(s in all_freq for s in subsets):
+                        candidates.add(union)
+        # Calculate support for each candidate
+        freq = {}
+        for cand in candidates:
+            cols = list(cand)
+            sup = (df[cols].all(axis=1)).mean()
+            if sup >= min_support:
+                freq[cand] = sup
+        all_freq.update(freq)
+        k += 1
+    return all_freq
+
+start_imp = time.time()
+fi_improved = improved_apriori(df, min_support=0.05)
+time_imp = time.time() - start_imp
+
+# ── Step 5: Comparison report ───────────────────────────────────
+print('=' * 50)
+print('   ALGORITHM COMPARISON REPORT')
+print('=' * 50)
+print(f'{'Algorithm':<25} {'Freq. Itemsets':>14} {'Time (ms)':>10}')
+print('-' * 50)
+print(f'{'Standard Apriori':<25} {len(fi_std):>14} {time_std*1000:>10.2f}')
+print(f'{'Improved Apriori':<25} {len(fi_improved):>14} {time_imp*1000:>10.2f}')
+print('=' * 50)
+
+# ── Step 6: Itemsets by length ──────────────────────────────────
+print('\nFrequent itemsets by length (Standard Apriori):')
+length_dist = fi_std.groupby('length').size()
+for ln, cnt in length_dist.items():
+    print(f'  Length-{ln}: {cnt} itemsets')
+
+#################################################################################################################################
+
+
+4)
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier, export_text
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (
+    accuracy_score, classification_report, confusion_matrix
+)
+
+# ── Step 1: Load dataset ──────────────────────────────────────
+iris = load_iris()
+X, y = iris.data, iris.target
+feature_names = iris.feature_names
+class_names = iris.target_names
+print('Dataset shape:', X.shape)
+print('Classes:', class_names)
+
+# ── Step 2: Train-test split (stratified) ────────────────────
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)
+print(f'\nTraining samples: {len(X_train)}, Test samples: {len(X_test)}')
+
+# ── Step 3: Train Decision Tree classifier ───────────────────
+dt = DecisionTreeClassifier(criterion='gini', max_depth=4, random_state=42)
+dt.fit(X_train, y_train)
+print('\nDecision Tree trained successfully.')
+
+# ── Step 4: Predictions ───────────────────────────────────────
+y_pred = dt.predict(X_test)
+
+# ── Step 5: Evaluation metrics ───────────────────────────────
+acc = accuracy_score(y_test, y_pred)
+print(f'\nAccuracy: {acc:.4f} ({acc*100:.2f}%)')
+
+print('\nClassification Report:')
+print(classification_report(y_test, y_pred, target_names=class_names))
+
+# ── Step 6: Confusion matrix ─────────────────────────────────
+cm = confusion_matrix(y_test, y_pred)
+print('Confusion Matrix:')
+print(cm)
+
+# ── Step 7: Feature importances ──────────────────────────────
+print('\nFeature Importances:')
+for name, imp in zip(feature_names, dt.feature_importances_):
+    print(f'  {name:<26}: {imp:.4f}')
+
+# ── Step 8: Tree rules (text) ────────────────────────────────
+print('\nDecision Tree Rules:')
+print(export_text(dt, feature_names=list(feature_names)))
+
+# ── Step 9: Depth experiment ─────────────────────────────────
+print('\nAccuracy vs Max Depth:')
+for depth in range(1, 8):
+    clf = DecisionTreeClassifier(max_depth=depth, random_state=42)
+    clf.fit(X_train, y_train)
+    a = accuracy_score(y_test, clf.predict(X_test))
+    print(f'  Depth {depth}: {a:.4f}')
+
+###################################################################################################################################
+
+5)
+
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import (
+    accuracy_score, classification_report, confusion_matrix
+)
+
+# ── Step 1: Load and split dataset ───────────────────────────
+iris = load_iris()
+X, y = iris.data, iris.target
+class_names = iris.target_names
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)
+
+# ── Step 2: Feature scaling ───────────────────────────────────
+scaler = StandardScaler()
+X_train_sc = scaler.fit_transform(X_train)
+X_test_sc = scaler.transform(X_test)
+
+# ── Step 3: Train Naive Bayes ─────────────────────────────────
+gnb = GaussianNB()
+gnb.fit(X_train_sc, y_train)
+y_pred_nb = gnb.predict(X_test_sc)
+
+# ── Step 4: Evaluation ────────────────────────────────────────
+acc_nb = accuracy_score(y_test, y_pred_nb)
+print('=== Naive Bayes Classifier ===')
+print(f'Accuracy: {acc_nb:.4f} ({acc_nb*100:.2f}%)')
+print('\nClassification Report:')
+print(classification_report(y_test, y_pred_nb, target_names=class_names))
+
+# ── Step 5: Confusion matrix ─────────────────────────────────
+cm_nb = confusion_matrix(y_test, y_pred_nb)
+print('Confusion Matrix (Naive Bayes):')
+print(cm_nb)
+
+# ── Step 6: Train Decision Tree for comparison ───────────────
+dt = DecisionTreeClassifier(max_depth=4, random_state=42)
+dt.fit(X_train_sc, y_train)
+y_pred_dt = dt.predict(X_test_sc)
+acc_dt = accuracy_score(y_test, y_pred_dt)
+
+# ── Step 7: Comparison ────────────────────────────────────────
+print('\n=== Classifier Comparison ===')
+print(f'{'Classifier':<25} {'Accuracy':>10}')
+print('-' * 38)
+print(f'{'Naive Bayes':<25} {acc_nb:>10.4f}')
+print(f'{'Decision Tree (D=4)':<25} {acc_dt:>10.4f}')
+
+# ── Step 8: Cross-validation ─────────────────────────────────
+print('\n=== 5-Fold Cross-Validation ===')
+cv_nb  = cross_val_score(GaussianNB(), X, y, cv=5)
+cv_dt  = cross_val_score(DecisionTreeClassifier(max_depth=4, random_state=42), X, y, cv=5)
+print(f'Naive Bayes CV Mean:     {cv_nb.mean():.4f} (+/- {cv_nb.std():.4f})')
+print(f'Decision Tree CV Mean:   {cv_dt.mean():.4f} (+/- {cv_dt.std():.4f})')
+
+
