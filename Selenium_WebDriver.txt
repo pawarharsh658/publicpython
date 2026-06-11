@@ -1,0 +1,176 @@
+# Selenium WebDriver Practicals (No. 4 to 8)
+
+## Practical No. 4 – LaunchTest.java
+
+```java
+package com.selenium.tests;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class LaunchTest {
+
+    public static void main(String[] args) {
+
+        WebDriver driver = new ChromeDriver();
+
+        driver.get("https://www.redbus.in/");
+        driver.manage().window().maximize();
+
+        System.out.println("Launch URL Successfully!");
+    }
+}
+```
+
+---
+
+## Practical No. 5 – NavigationTest.java
+
+```java
+package com.selenium.tests;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class NavigationTest {
+
+    public static void main(String[] args) {
+
+        WebDriver driver = new ChromeDriver();
+
+        driver.get("https://www.google.com");
+        System.out.println("Opened Google");
+
+        driver.navigate().to("https://www.github.com");
+        System.out.println("Opened GitHub");
+
+        driver.navigate().back();
+        driver.navigate().forward();
+        driver.navigate().refresh();
+    }
+}
+```
+
+---
+
+## Practical No. 6 – LoginTest.java
+
+```java
+package com.selenium.tests;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class LoginTest {
+
+    public static void main(String[] args) throws InterruptedException {
+
+        WebDriver driver = new ChromeDriver();
+
+        driver.get("https://practicetestautomation.com/practicetestlogin/");
+        driver.manage().window().maximize();
+
+        WebElement usernameField = driver.findElement(By.id("username"));
+        usernameField.sendKeys("student");
+
+        Thread.sleep(3000);
+
+        WebElement passwordField = driver.findElement(By.name("password"));
+        passwordField.sendKeys("Password123");
+
+        Thread.sleep(3000);
+
+        WebElement loginButton = driver.findElement(By.id("submit"));
+        loginButton.click();
+
+        Thread.sleep(3000);
+
+        System.out.println("Title: " + driver.getTitle());
+
+        Thread.sleep(3000);
+
+        driver.quit();
+    }
+}
+```
+
+---
+
+## Practical No. 7 – LocatorTest.java
+
+```java
+package com.selenium.tests;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class LocatorTest {
+
+    public static void main(String[] args) throws InterruptedException {
+
+        WebDriver driver = new ChromeDriver();
+
+        driver.manage().window().maximize();
+        driver.get("https://www.google.com/");
+
+        WebElement searchBox = driver.findElement(By.className("gLFyf"));
+        searchBox.sendKeys("Selenium Testing");
+
+        System.out.println("Text entered Successfully");
+
+        WebElement inputElement = driver.findElement(By.tagName("input"));
+        System.out.println("TagName Text: " + inputElement.getTagName());
+
+        WebElement gmailLink = driver.findElement(By.linkText("Gmail"));
+        System.out.println("Link Text: " + gmailLink.getText());
+
+        gmailLink.click();
+
+        Thread.sleep(5000);
+
+        driver.quit();
+    }
+}
+```
+
+---
+
+## Practical No. 8 – CssSelectorTest.java
+
+```java
+package com.selenium.tests;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+
+public class CssSelectorTest {
+
+    public static void main(String[] args) throws InterruptedException {
+
+        WebDriver driver = new ChromeDriver();
+
+        driver.get("https://www.google.com/");
+        driver.manage().window().maximize();
+
+        WebElement searchBox = driver.findElement(
+                By.cssSelector("textarea.gLFyf"));
+
+        searchBox.sendKeys("Selenium Testing");
+
+        System.out.println("Text Entered Successfully");
+
+        Thread.sleep(3000);
+
+        System.out.println("Title: " + driver.getTitle());
+        System.out.println("Current URL: " + driver.getCurrentUrl());
+
+        driver.quit();
+    }
+}
+```
