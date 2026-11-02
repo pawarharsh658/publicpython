@@ -1,3 +1,6 @@
+
+
+To explore a dataset and demonstrate the stages of a machine learning workflow – data collection, preparation, and understanding of features and labels
 program 1
 
 import pandas as pd
@@ -29,7 +32,7 @@ print(X_scaled.describe().loc[['mean', 'std']].round(2))
 
 
 
-
+: To prepare a dataset by separating features and labels and splitting it into training and testing subsets. 
 program 2
 
 
@@ -55,7 +58,7 @@ print("Train mean after scaling:", X_train_s.mean(axis=0).round(2))
 
 
 
-
+: To build a linear regression model that predicts a continuous value from one input feature
 program 3
 
 import numpy as np
@@ -94,7 +97,7 @@ plt.xlabel("Hours studied"); plt.ylabel("Score"); plt.legend(); plt.show()
 
 
 
-
+To implement multiple linear regression and polynomial regression on suitable sample datasets and compare predictions
 program 4
 
 import numpy as np
@@ -133,7 +136,7 @@ for d in (1, 2, 5, 10):
 
 
 
-
+To build a classification model on a labelled dataset and evaluate its predictions using suitable evaluation measures
 program 5
 
 from sklearn.datasets import load_breast_cancer
@@ -164,7 +167,7 @@ print("ROC-AUC:", round(roc_auc_score(yte, clf.predict_proba(Xte)[:, 1]), 3))
 
 
 
-
+: To implement logistic regression for a classification task using a labelled dataset
 program 6
 
 from sklearn.datasets import load_breast_cancer
@@ -206,7 +209,7 @@ for t in (0.3, 0.5, 0.7):
 
 
 
-
+: To apply a Support Vector Machine classifier to a labelled dataset and examine the effect of selected model settings
 program 7
 
 from sklearn.datasets import load_breast_cancer
@@ -240,7 +243,7 @@ print("Support vectors per class (rbf, C=1):", best[-1].n_support_)
 
 
 
-
+To implement the K-Nearest Neighbors algorithm and classify observations based on nearby training examples. 
 program 8
 
 from sklearn.datasets import load_iris
@@ -283,7 +286,7 @@ print("Predicted class:", data.target_names[final.predict(new_flower)[0]])
 
 
 
-
+: To apply the Apriori algorithm to a transactional dataset to identify frequent itemsets using a specified minimum support
 program 9
 
 import pandas as pd
@@ -322,7 +325,7 @@ print(frequent)
 
 
 
-
+: To generate association rules from frequent itemsets and study frequent pattern mining approaches – FIM (Apriori), FP-Growth and ECLAT – using a small transaction dataset
 program 10
 
 
